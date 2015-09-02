@@ -1,0 +1,4 @@
+def doTheStuff():
+	print('cool')
+
+doTheStuff()
