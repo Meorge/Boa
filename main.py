@@ -1922,10 +1922,10 @@ class SpecialThread(QtCore.QThread):
                 dweet = dweet['content']
                 print('My username is ' + username + ', and I think my partner\'s username is ' + dweet['person'])
 
-                if dweet['command'][:3] == 'MSG':
+                '''if dweet['command'][:3] == 'MSG':
                     message = dweet['command'][3:]
 
-                    self.thingSignal.emit(message, 0, 0, 'MSG', dweet['person'])
+                    self.thingSignal.emit(message, 0, 0, 'MSG', dweet['person'])'''
 
                 elif dweet['person'] != username:
                     #partnerUsername = dweet['person']
