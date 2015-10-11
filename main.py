@@ -16,6 +16,7 @@ import requests, pip, site
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from coolGUIs.coolGUI import SearchBox
+import xml.etree.ElementTree as ET
 #from pastebin import PastebinAPI
 Qt = QtCore.Qt
 
@@ -39,6 +40,8 @@ class Window(QtWidgets.QMainWindow):
         #print(help('modules'))
         print(site.getsitepackages())
         self.resize(1200,700)
+
+        self.filename = None
         
         self.setStyleSheet("""QMainWindow {background-color: #202020;}""")
         self.textedit = LineTextWidget()
@@ -134,7 +137,7 @@ class Window(QtWidgets.QMainWindow):
         self.newAction = QtWidgets.QAction('&New', self)
         self.newAction.setShortcut(QtGui.QKeySequence.New)
         self.newAction.setStatusTip('Create an empty Python script')
-        self.newAction.triggered.connect(self.newFile)
+        self.newAction.triggered.connect(self.newFileDialog)
         
         self.saveAction = QtWidgets.QAction('&Save', self)
         self.saveAction.setShortcut(QtGui.QKeySequence.Save)
@@ -445,6 +448,89 @@ class Window(QtWidgets.QMainWindow):
 
         self.modulesWindow_W.show()
 
+
+    def newFileDialog(self):
+        self.fileStuffs = {}
+        self.fileStuffs2 = {}
+        self.newFileDialog = QtWidgets.QDialog(parent=self)
+        self.newFileDialog.setMinimumWidth(600)
+        self.newFileDialog.setWindowFlags(Qt.Sheet)
+
+        self.NFD_ListView = QtWidgets.QListWidget()
+        self.NFD_ListView.setStyleSheet('QListWidget {padding-top: 15px; padding-left: 15px; background-color: white;} QListWidget:icon {padding-right: 5http://prntscr.com/8lnzpf5px;}')
+        self.NFD_ListView.setIconSize(QtCore.QSize(50,50))
+        self.NFD_ListView.setViewMode(QtWidgets.QListView.IconMode)
+        self.NFD_ListView.currentTextChanged.connect(self.newFileDialog_ItemChanged)
+        # self.NFD_ListView.setFlow(QtWidgets.QListView.TopToBottom)
+
+
+        self.NFD_choosel = QtWidgets.QLabel('Please choose a file type.')
+
+        self.NFD_Title = QtWidgets.QLabel('Non-Existent File')
+        self.NFD_Title.font().setBold(True)
+        self.NFD_Desc = QtWidgets.QLabel('This file doesn\'t exist yet. Maybe someday!')
+
+
+        self.NFD_Buttons = QtWidgets.QWidget()
+        self.NFD_Cancel = QtWidgets.QPushButton('Cancel')
+        self.NFD_Cancel.setMaximumWidth(100)
+        self.NFD_Cancel.clicked.connect(self.newFileDialog_cancel)
+        self.NFD_OK = QtWidgets.QPushButton('Continue')
+        self.NFD_OK.setMaximumWidth(100)
+        self.NFD_OK.clicked.connect(self.newFileDialog_ok)
+
+        self.NFD_ButtonsL = QtWidgets.QHBoxLayout()
+        self.NFD_ButtonsL.addWidget(self.NFD_Cancel)
+        self.NFD_ButtonsL.addWidget(self.NFD_OK)
+        self.NFD_Buttons.setLayout(self.NFD_ButtonsL)
+
+        self.NFD_Layout = QtWidgets.QVBoxLayout()
+        self.NFD_Layout.addWidget(self.NFD_choosel)
+        self.NFD_Layout.addWidget(self.NFD_ListView)
+        self.NFD_Layout.addWidget(self.NFD_Title)
+        self.NFD_Layout.addWidget(self.NFD_Desc)
+        self.NFD_Layout.addWidget(self.NFD_Buttons)
+
+
+
+        tree = ET.parse('filetypes.xml')
+        root = tree.getroot()
+
+        for child in root:
+            newItem = QtWidgets.QListWidgetItem(child.attrib['name'], self.NFD_ListView)
+
+            newItemIcon = QtGui.QIcon(child.attrib['icon'] + '.png')
+
+            self.fileStuffs[child.attrib['name']] = child.attrib['desc']
+            self.fileStuffs2[child.attrib['name']] = child.attrib['extension']
+
+            newItem.setIcon(newItemIcon)
+
+
+
+        self.newFileDialog.setLayout(self.NFD_Layout)
+        self.newFileDialog.show()
+
+
+    def newFileDialog_ItemChanged(self, string):
+        self.NFD_Title.setText(string)
+        self.NFD_Desc.setText(self.fileStuffs[string])
+
+    def newFileDialog_cancel(self):
+        self.newFileDialog.close()
+
+    def newFileDialog_ok(self):
+        fileExtension = self.fileStuffs2[self.NFD_Title.text()]
+
+        fp = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", '', (self.NFD_Title.text() + ' (*.' + fileExtension + ')'))[0]
+        print(fp)
+        openFile = open(fp, 'w')
+
+        openFile.close()
+
+        self.newFileDialog.close()
+
+        self.openFile(blarg=3, fileToOpen=fp)
 
     def hideModulesWindow(self):
         self.modulesWindow_W.hide()
@@ -972,28 +1058,101 @@ class Window(QtWidgets.QMainWindow):
         textCursor.setPosition(block.position())
         self.textedit.edit.setTextCursor(textCursor)
 
-    def openFile(self):
-        fileToOpen = QtWidgets.QFileDialog.getOpenFileName(self, "Choose a File", '', ('Python Scripts (*.py);;All Files (*)'))[0]
-        filename = fileToOpen.split("/")[-1]
+    def openFile(self, blarg, fileToOpen=None):
+        print(fileToOpen)
+        if self.changesSaved:
+            self.actualOpen(fileToOpen)
+
+        else:
+
+            popup = QtWidgets.QMessageBox(self)
+
+            popup.setIcon(QtWidgets.QMessageBox.Warning)
+
+            popup.setText("The document has been modified")
+
+            popup.setInformativeText("Do you want to save your changes?")
+
+            popup.setStandardButtons(QtWidgets.QMessageBox.Save    |
+                                      QtWidgets.QMessageBox.Cancel |
+                                      QtWidgets.QMessageBox.Discard)
+
+            popup.setDefaultButton(QtWidgets.QMessageBox.Save)
+
+            answer = popup.exec_()
+
+            if answer == QtWidgets.QMessageBox.Save:
+                self.saveFile()
+                self.actualOpen(fileToOpen)
+
+            elif answer == QtWidgets.QMessageBox.Discard:
+                self.actualOpen(fileToOpen)
+
+            else:
+                return
+
+
+    def actualOpen(self, fileToOpen=None):
+        print(fileToOpen)
+        if fileToOpen == None: fileToOpen = QtWidgets.QFileDialog.getOpenFileName(self, "Choose a File", '', ('Python Scripts (*.py);;All Files (*)'))[0]
+        #print(fileToOpen)
+        self.filename = fileToOpen.split("/")[-1]
         
         fo = open(fileToOpen, 'r')
         fileContents = fo.read()
         self.textedit.edit.setPlainText(fileContents)
-    
+
+        self.setWindowTitle(self.filename)
+
     def newFile(self):
-        self.textedit.edit.setPlainText('')
-        
+        if self.changesSaved:
+            self.newFileDialog()
+
+        else:
+
+            popup = QtWidgets.QMessageBox(self)
+
+            popup.setIcon(QtWidgets.QMessageBox.Warning)
+
+            popup.setText("The document has been modified")
+
+            popup.setInformativeText("Do you want to save your changes?")
+
+            popup.setStandardButtons(QtWidgets.QMessageBox.Save    |
+                                      QtWidgets.QMessageBox.Cancel |
+                                      QtWidgets.QMessageBox.Discard)
+
+            popup.setDefaultButton(QtWidgets.QMessageBox.Save)
+
+            answer = popup.exec_()
+
+            if answer == QtWidgets.QMessageBox.Save:
+                self.saveFile()
+                self.newFileDialog()
+
+            elif answer == QtWidgets.QMessageBox.Discard:
+                self.newFileDialog()
+
+            else:
+                return
         
     def saveFile(self):
-        pathToSave = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", '', ('Python Scripts (*.py);;All Files (*)'))
-        
-        actualFile = pathToSave[0]
-        openFile = open(actualFile, 'w')
+        if self.filename != None:
+            of = open(self.filename, 'w')
+            of.write(self.textedit.edit.toPlainText())
+            of.close()
+            self.changesSaved = True
+        else:
+            pathToSave = QtWidgets.QFileDialog.getSaveFileName(self, "Save File", '', ('Python Scripts (*.py);;All Files (*)'))
+            
+            actualFile = pathToSave
+            openFile = open(actualFile, 'w')
 
-        openFile.write(self.textedit.edit.toPlainText())
-        openFile.close()
+            openFile.write(self.textedit.edit.toPlainText())
+            openFile.close()
 
-        self.changesSaved = True
+            self.changesSaved = True
+            self.filename = pathToSave.split("/")[-1]
     
     def checkforHighlight(self, position, charsRemoved, charsAdded):
         """
@@ -1359,7 +1518,7 @@ class Window(QtWidgets.QMainWindow):
 
         IRCThread.start()
 
-        self.makeChatWindow()
+        #self.makeChatWindow()
 
     def makeChatWindow(self):
         self.chatWindow = QtWidgets.QDockWidget('Chat')
@@ -1486,7 +1645,7 @@ class Window(QtWidgets.QMainWindow):
             isCollabing = True
             IRCThread.start()
 
-            self.makeChatWindow()
+            #self.makeChatWindow()
 
 
 

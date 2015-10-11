@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<filetypes>
+    <filetype name="Python File" icon="pyfile" extension="py" desc="A basic Python file, used for holding Python code." header=""/>
+    <filetype name="XML File" icon="xmlfile" extension="xml" desc="A blank XML file, used for storing information used by a program."/>
+    <!--header="<?xml version='1.0'?>"/>-->
+    <filetype name="Empty File" icon="emptyfile" extension="" desc="A blank file." />
+</filetypes>

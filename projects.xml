@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<projects>
+    <project name="Blank Project" icon="blank" desc="An empty project.">
+        <file name="main.py" content="" />
+    </project>
+    
+    
+    <project name="GUI Application" icon="pyqtproj" desc="A blank GUI application, using PyQt5.\nPlease note: Qt 5 and PyQt5 are required to run this type of project.">
+        <file name="main.py" content="from PyQt5 import QtWidgets, QtGui, QtCore\nimport sys\nQt = QtCore.Qt\n\nclass MainWindow(QtWidgets.QMainWindow):\n\tdef __init__(self, parent=None):\n\t\tsuper(Window, self).__init__(parent)\n\t\t## Start coding here!\n\n\nif __name__ == '__main__':\n\tglobal app, window\n\tapp = QtWidgets.QApplication(sys.argv)\n\twindow = MainWindow()\n\twindow.show()\n\tsys.exit(app.exec_())" />
+        
+    </project>
+    <project name="Module" icon="framework" desc="A template for a Python module.">
+        <folder name="NAME">
+            <file name="__init__.py" content="" />
+        </folder>
+        
+        <file name="setup.py" content="from setuptools import setup\nsetup(name='MNAME',version='VERSIONNUM', description='DESC', url='URL', author='AUTHOR', author_email='AUTHOREMAIL', license='LICENSE', packages=['NAME'], zip_safe=False)" />
+        
+    </project>
+    
+    <project name="Game" icon="game" desc="A blank template for a game using the Pygame framework.\nPlease note: The Pygame framework is required to run this type of project.">
+        <file name="main.py" content="import sys, pygame\npygame.init()\n## initialize stuff here!\n\n\nWhile True:\n\t## Write the 'running code' for your game here!" />
+        <efolder name="Assets" />
+        
+    </project>
+    
+</projects>
